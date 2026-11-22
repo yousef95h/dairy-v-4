@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>مذكراتي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="مذكراتي">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#24170f">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<style>
+/* VOICE: personal, quiet, nostalgic — an old diary on a wooden desk
+   IDEA: a real bound notebook with aged yellow ruled paper, spine on the right
+   PICTURE: the open page itself, filling the screen, turning from the right
+   COLOUR and TYPE: aged paper #efdcae, black ink, leather cover #5b2618 with gold; Aref Ruqaa (Arabic handwriting)
+   LAYOUT: thin bar on top, one page centred, page controls below */
+:root{--desk:#24170f;--ink:#15100b;--cream:#f3e6c6;--gold:#d8b46a;--rule:rgba(120,86,40,.38);--margin:rgba(170,60,50,.45);color-scheme:dark}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
+body{background:radial-gradient(120% 80% at 50% 40%,#3a271a,#1a100a);color:var(--cream);font:16px/1.5 "Aref Ruqaa",serif;position:fixed;inset:0}
+#app{position:absolute;inset:0;display:flex;flex-direction:column}
+.bar{display:flex;align-items:center;gap:6px;padding:6px 10px;height:54px;flex:none}
+.bar .ttl{flex:1;text-align:center;line-height:1.1;cursor:pointer}
+.bar .ttl b{font-size:22px;color:var(--gold);font-weight:700}
+.bar .ttl small{display:block;font-size:13px;opacity:.75}
+.ib{width:44px;height:44px;border:0;border-radius:12px;background:rgba(255,240,210,.08);color:var(--cream);display:grid;place-items:center;cursor:pointer}
+.ib:active{background:rgba(255,240,210,.18)}.ib svg{width:22px;height:22px}
+.ib:focus-visible,.nb:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#desk{flex:1;display:grid;place-items:center;position:relative}
+body.typing #desk{display:block;overflow:hidden}
+body.typing #frame{position:absolute;left:50%;transform:translateX(-50%);transition:top .18s ease-out}
+body.typing .nav{display:none}
+#frame{position:relative}
+#stage{position:absolute;top:0;left:0;width:360px;height:580px;transform-origin:0 0;perspective:1800px}
+.page{position:absolute;inset:0;border-radius:3px 8px 8px 3px;overflow:hidden;
+ background:
+  radial-gradient(60% 40% at 30% 75%,rgba(160,110,40,.10),transparent 70%),
+  radial-gradient(30% 20% at 80% 15%,rgba(150,100,30,.08),transparent 70%),
+  linear-gradient(to left,rgba(80,50,20,.28),transparent 7%),
+  radial-gradient(120% 100% at 45% 50%,#f5e7c0 0,#ecd7a3 60%,#d6b97c 100%);
+ box-shadow:0 18px 40px rgba(0,0,0,.55),inset 0 0 30px rgba(120,80,30,.25)}
+.page::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;mix-blend-mode:multiply;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .32 0 0 0 0 .15 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.rules{position:absolute;left:0;right:0;top:58px;height:480px;pointer-events:none;
+ background:repeating-linear-gradient(to bottom,transparent 0 24px,var(--rule) 24px 25px,transparent 25px 30px)}
+.mline{position:absolute;top:0;bottom:0;right:40px;width:3px;border-right:1px solid var(--margin);border-left:1px solid var(--margin);pointer-events:none}
+.num{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:#7a5a30;font-size:17px;pointer-events:none}
+.w{position:absolute;top:58px;left:26px;right:48px;height:480px;margin:0;padding:0 4px;border:0;outline:0;resize:none;background:transparent;overflow:hidden;
+ font:23px/30px "Aref Ruqaa",serif;color:var(--ink);white-space:pre-wrap;overflow-wrap:break-word;word-break:normal;unicode-bidi:plaintext;text-align:start;caret-color:#5b2618}
+.w::placeholder{color:rgba(90,60,25,.45)}
+textarea.w::selection{background:rgba(160,110,40,.3)}
+#meas{visibility:hidden;height:0!important;pointer-events:none}
+#flip{transform-style:preserve-3d;background:none;box-shadow:none;overflow:visible;transform-origin:100% 50%;display:none;z-index:4}
+#flip .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+#flip .back{transform:rotateY(180deg)}
+#flip .back::after{content:"";position:absolute;inset:0;background:linear-gradient(to right,rgba(70,40,15,.25),transparent 30%)}
+#under{display:none;z-index:3}
+#cur{z-index:1}
+.shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to left,rgba(0,0,0,.35),transparent 60%);opacity:0}
+#cover{position:absolute;inset:0;z-index:6;transform-origin:100% 50%;transform-style:preserve-3d;cursor:pointer}
+#cover .face{position:absolute;inset:0;border-radius:4px 10px 10px 4px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+#cover .front{background:linear-gradient(to left,rgba(0,0,0,.45),transparent 9%),radial-gradient(120% 90% at 40% 35%,#7a3622,#4a1d12 70%,#2e110a);box-shadow:0 22px 50px rgba(0,0,0,.6);display:grid;place-items:center}
+#cover .front::before{content:"";position:absolute;inset:18px 18px 18px 30px;border:2px solid rgba(216,180,106,.75);outline:1px solid rgba(216,180,106,.45);outline-offset:-8px;border-radius:4px}
+#cover .front h1{margin:0;font-size:64px;font-weight:700;color:var(--gold);text-shadow:0 2px 0 rgba(0,0,0,.45),0 -1px 0 rgba(255,230,170,.25)}
+#cover .front p{position:absolute;bottom:56px;margin:0;color:rgba(216,180,106,.8);font-size:16px}
+#cover .orn{position:absolute;top:150px;width:140px;height:20px}
+#cover .back{transform:rotateY(180deg);background:#8a6a3c radial-gradient(circle at 50% 50%,#a5824d,#6f5129)}
+.nav{flex:none;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 8px}
+.nb{height:44px;min-width:96px;border:0;border-radius:22px;background:rgba(255,240,210,.1);color:var(--cream);font:17px "Aref Ruqaa",serif;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+.nb:active{background:rgba(255,240,210,.2)}.nb:disabled{opacity:.35}
+#cnt{font-size:16px;opacity:.85;white-space:nowrap}
+#grid{position:absolute;inset:0;z-index:20;background:rgba(20,12,7,.94);display:none;flex-direction:column}
+#grid.on{display:flex}
+#grid header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;height:56px}
+#grid header b{font-size:22px;color:var(--gold)}
+#gl{flex:1;overflow-y:auto;padding:6px 14px 30px;display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:14px;align-content:start}
+.th{position:relative;aspect-ratio:360/580;border:0;padding:10px 8px 22px;border-radius:2px 5px 5px 2px;cursor:pointer;text-align:right;color:var(--ink);font:9px/13px "Aref Ruqaa",serif;overflow:hidden;
+ background:repeating-linear-gradient(to bottom,transparent 0 12px,rgba(120,86,40,.3) 12px 13px),radial-gradient(120% 100% at 45% 50%,#f5e7c0,#d9bd82);box-shadow:0 6px 14px rgba(0,0,0,.5);white-space:pre-wrap;unicode-bidi:plaintext}
+.th i{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-style:normal;color:#7a5a30;font-size:12px}
+.th.cur{outline:3px solid var(--gold);outline-offset:3px}
+.bk{display:flex;gap:10px;justify-content:center;padding:10px 12px 18px;flex:none}.bk .nb{flex:1;max-width:180px}
+#toast{position:absolute;left:50%;bottom:76px;transform:translateX(-50%) translateY(20px);background:#f3e6c6;color:#2a1a0e;padding:10px 18px;border-radius:20px;font-size:16px;opacity:0;transition:.3s;pointer-events:none;z-index:30;white-space:nowrap}
+#toast.on{opacity:1;transform:translateX(-50%)}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="bar">
+    <button class="ib" id="bGrid" aria-label="كل الصفحات"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="9" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+    <div class="ttl" id="ttl" title="اغلق الدفتر"><b>مذكراتي</b><small id="st">جاري التحميل…</small></div>
+    <button class="ib" id="bDate" aria-label="اكتب تاريخ اليوم"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>
+    <button class="ib" id="bPdf" aria-label="حفظ PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 17v3h16v-3"/></svg></button>
+  </div>
+  <div id="desk"><div id="frame"><div id="stage">
+    <div class="page" id="cur"><div class="rules"></div><div class="mline"></div>
+      <textarea class="w" id="ta" dir="rtl" spellcheck="false" autocomplete="off" placeholder="اكتب هنا…"></textarea>
+      <div class="num"></div></div>
+    <div class="page" id="under"><div class="rules"></div><div class="mline"></div><div class="w txt"></div><div class="num"></div></div>
+    <div class="page" id="flip">
+      <div class="face page front"><div class="rules"></div><div class="mline"></div><div class="w txt"></div><div class="num"></div><div class="shade"></div></div>
+      <div class="face page back"><div class="shade"></div></div>
+    </div>
+    <div id="cover">
+      <div class="face front"><svg class="orn" viewBox="0 0 140 20"><path d="M0 10h55M85 10h55" stroke="#d8b46a" stroke-width="1"/><path d="M70 2l8 8-8 8-8-8z" fill="none" stroke="#d8b46a" stroke-width="1.4"/><circle cx="70" cy="10" r="2" fill="#d8b46a"/></svg><h1>مذكراتي</h1><p>اضغط لفتح الدفتر</p></div>
+      <div class="face back"></div>
+    </div>
+    <textarea class="w" id="meas" dir="rtl" tabindex="-1" aria-hidden="true"></textarea>
+  </div></div></div>
+  <div class="nav">
+    <button class="nb" id="bPrev">→ السابقة</button>
+    <span id="cnt"></span>
+    <button class="nb" id="bNext">التالية ←</button>
+  </div>
+  <div id="grid"><header><b>كل الصفحات <small style="font-size:13px;opacity:.6;font-weight:400">إصدار ٤</small></b><button class="ib" id="gClose" aria-label="إغلاق">✕</button></header><div id="gl"></div><div class="bk"><button class="nb" id="bBack">نسخة احتياطية</button><button class="nb" id="bRest">استرجاع نسخة</button><input type="file" id="fIn" accept=".json,application/json" hidden></div></div>
+  <div id="toast"></div>
+</div>
+<script>
+{
+const PW=360,PH=580,TOP=58,LH=30,TAH=480,TXL=26,TXR=48;
+const $=id=>document.getElementById(id);
+const ta=$('ta'),meas=$('meas'),stage=$('stage'),frame=$('frame'),cover=$('cover'),flip=$('flip'),under=$('under');
+const AR=n=>String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}};
+let pages=[''],cur=0,updated=0,busy=false,coverOpen=false;
+
+/* ---------- storage (device first, account second) ---------- */
+try{const s=JSON.parse(ls.get('diary-v1')||'null');if(s&&typeof s.text==='string'){pages=[s.text];updated=s.updated||0}}catch(e){}
+const allText=()=>pages.join('');
+let lt=null;
+function saveLocal(){clearTimeout(lt);lt=setTimeout(()=>ls.set('diary-v1',JSON.stringify({text:allText(),updated})),250)}
+const st=$('st');const setSt=t=>st.textContent=t;
+function dirty(){updated=Date.now();saveLocal();setSt('محفوظ على الجوال ✓')}
+function connect(){try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){clearTimeout(lt);ls.set('diary-v1',JSON.stringify({text:allText(),updated}))}});
+
+/* ---------- pagination ---------- */
+/* \f = page break the writer asked for (from the "next" button); it ends a page and is never shown */
+const BR='\f',vis=p=>p.replace(/\f/g,'');
+const fits=s=>{meas.value=vis(s);return meas.scrollHeight<=TAH+1};
+const full=s=>s.endsWith(BR)||!fits(s+'\nا');
+function fitLen(t){
+  const j=t.indexOf(BR),lim=j>=0?j+1:t.length;
+  if(fits(t.slice(0,lim)))return lim;
+  let lo=0,hi=Math.min(lim,2600);
+  while(lo<hi){const m=(lo+hi+1)>>1;if(fits(t.slice(0,m)))lo=m;else hi=m-1}
+  let n=lo;const ws=c=>c===' '||c==='\n';
+  if(n>0&&n<lim&&!ws(t[n])&&!ws(t[n-1])){const k=Math.max(t.lastIndexOf(' ',n-1),t.lastIndexOf('\n',n-1));if(k>=0&&k>n-40)n=k+1}
+  return Math.max(n,1);
+}
+const starts=a=>{const s=[];let o=0;for(const p of a){s.push(o);o+=p.length}return s};
+function reflow(edit,old,os,delta){
+  const from=Math.max(0,edit-1);/* re-fit the page before too, so the result is the same as after a restart */
+  const out=pages.slice(0,from);let rest=pages.slice(from).join(''),abs=os?os[from]:0,k=from;
+  while(rest){const n=fitLen(rest);out.push(rest.slice(0,n));rest=rest.slice(n);abs+=n;k++;
+    if(rest&&old&&k>edit&&k<old.length&&abs===os[k]+delta){out.push(...old.slice(k));break}}
+  if(!out.length)out.push('');pages=out;normalize();
+}
+function normalize(){
+  while(pages.length>1&&pages[pages.length-1]===''&&!full(pages[pages.length-2]))pages.pop();
+  const l=pages[pages.length-1];if(l&&full(l))pages.push('');
+}
+function reflowAll(){pages=[allText()];reflow(0)}
+
+/* ---------- rendering ---------- */
+function paint(el,i){el.querySelector('.txt').textContent=vis(pages[i]||'');el.querySelector('.num').textContent='— '+AR(i+1)+' —'}
+function show(){ta.value=vis(pages[cur]);document.querySelector('#cur .num').textContent='— '+AR(cur+1)+' —';
+  $('cnt').textContent='صفحة '+AR(cur+1)+' من '+AR(pages.length);$('bPrev').disabled=cur===0;ls.set('diary-pos',cur)}
+function anim(el,frames,ms){if(RM)return Promise.resolve();return new Promise(r=>{const a=el.animate(frames,{duration:ms,easing:'cubic-bezier(.45,.05,.3,1)'});a.onfinish=r;a.oncancel=r})}
+async function go(p){
+  if(p===cur||p<0||p>=pages.length)return;if(busy){cur=p;show();return}const from=cur,dir=p>cur?1:-1,adj=Math.abs(p-cur)===1;cur=p;
+  if(!adj||RM){show();if(!RM)anim($('cur'),[{opacity:.2},{opacity:1}],260);return}
+  busy=true;const front=flip.querySelector('.front'),sh=flip.querySelectorAll('.shade');
+  if(dir>0){paint(front,from);show();flip.style.display='block';
+    sh.forEach(s=>anim(s,[{opacity:0},{opacity:1,offset:.5},{opacity:0}],720));
+    await anim(flip,[{transform:'rotateY(0)'},{transform:'rotateY(180deg)'}],720)}
+  else{paint(under,from);under.style.display='block';paint(front,p);show();flip.style.display='block';
+    sh.forEach(s=>anim(s,[{opacity:0},{opacity:1,offset:.5},{opacity:0}],720));
+    await anim(flip,[{transform:'rotateY(180deg)'},{transform:'rotateY(0)'}],720)}
+  flip.style.display='none';under.style.display='none';busy=false;
+}
+
+/* ---------- typing ---------- */
+function afterEdit(i,newVal,g,old,os){
+  const delta=newVal.length-old[i].length;pages[i]=newVal;reflow(i,old,os,delta);
+  const ns=starts(pages);let p=0;for(let k=0;k<ns.length;k++)if(ns[k]<=g)p=k;
+  if(p!==cur){go(p)}else if(ta.value!==vis(pages[p]))ta.value=vis(pages[p]);
+  const c=g-ns[p];ta.setSelectionRange(c,c);show();ta.setSelectionRange(c,c);dirty();
+}
+ta.addEventListener('input',()=>{const old=pages.slice(),os=starts(old);afterEdit(cur,ta.value+(old[cur].endsWith(BR)?BR:''),os[cur]+ta.selectionStart,old,os)});
+ta.addEventListener('keydown',e=>{
+  if(e.key==='Backspace'&&cur>0&&ta.selectionStart===0&&ta.selectionEnd===0){e.preventDefault();
+    const old=pages.slice(),os=starts(old),i=cur-1,v=old[i].slice(0,-1);pages[i]=v;
+    const g=os[cur]-1;reflow(i,old,os,-1);const ns=starts(pages);let p=0;for(let k=0;k<ns.length;k++)if(ns[k]<=g)p=k;
+    if(p!==cur)go(p);else show();const c=g-ns[p];ta.setSelectionRange(c,c);dirty()}
+});
+
+/* ---------- controls ---------- */
+const toast=t=>{const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2200)};
+function next(){
+  if(cur<pages.length-1)return go(cur+1);
+  if(!pages[cur]){toast('هذي صفحة جديدة، اكتب فيها');return}
+  pages[cur]=pages[cur].replace(/\n+$/,'')+BR;pages.push('');dirty();go(cur+1);
+}
+$('bNext').onclick=next;$('bPrev').onclick=()=>go(cur-1);
+let tx=0,ty=0,tt=0;
+stage.addEventListener('touchstart',e=>{const t=e.touches[0];tx=t.clientX;ty=t.clientY;tt=Date.now()},{passive:true});
+stage.addEventListener('touchend',e=>{if(!coverOpen)return;const t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;
+  if(Date.now()-tt<600&&Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){dx>0?next():go(cur-1)}},{passive:true});
+async function openCover(){if(coverOpen||busy)return;busy=true;
+  await anim(cover,[{transform:'rotateY(0)'},{transform:'rotateY(180deg)',opacity:1,offset:.85},{transform:'rotateY(180deg)',opacity:0}],900);
+  cover.style.display='none';coverOpen=true;busy=false}
+async function closeCover(){if(!coverOpen||busy)return;busy=true;ta.blur();cover.style.display='block';
+  await anim(cover,[{transform:'rotateY(180deg)',opacity:0},{transform:'rotateY(180deg)',opacity:1,offset:.15},{transform:'rotateY(0)'}],900);coverOpen=false;busy=false}
+cover.onclick=openCover;$('ttl').onclick=closeCover;
+$('bDate').onclick=()=>{if(!coverOpen){openCover();return}
+  const d=new Date().toLocaleDateString('ar-u-ca-gregory-nu-arab',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const a=ta.selectionStart,b=ta.selectionEnd,v=ta.value,pre=(a>0&&v[a-1]!=='\n')?'\n':'';
+  const old=pages.slice(),os=starts(old),ins=pre+d+'\n';const nv=v.slice(0,a)+ins+v.slice(b);ta.value=nv;ta.focus();
+  afterEdit(cur,nv+(old[cur].endsWith(BR)?BR:''),os[cur]+a+ins.length,old,os)};
+function openGrid(){const gl=$('gl');gl.innerHTML=pages.map((p,i)=>`<button class="th${i===cur?' cur':''}" data-i="${i}"></button>`).join('');
+  gl.querySelectorAll('.th').forEach(b=>{const i=+b.dataset.i;b.textContent=vis(pages[i]||'').slice(0,260);const n=document.createElement('i');n.textContent=AR(i+1);b.appendChild(n)});
+  $('grid').classList.add('on');gl.querySelector('.cur')?.scrollIntoView({block:'center'})}
+$('bGrid').onclick=openGrid;$('gClose').onclick=()=>$('grid').classList.remove('on');
+$('gl').onclick=e=>{const b=e.target.closest('.th');if(!b)return;$('grid').classList.remove('on');if(!coverOpen){cover.style.display='none';coverOpen=true}go(+b.dataset.i)};
+
+/* ---------- backup ---------- */
+function saveBlob(name,blob){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+$('bBack').onclick=()=>{const d=new Date().toISOString().slice(0,10);
+  saveBlob('mothakkerati-'+d+'.json',new Blob([JSON.stringify({app:'mothakkerati',text:allText(),updated})],{type:'application/json'}));toast('احفظه في "الملفات"')};
+$('bRest').onclick=()=>$('fIn').click();
+$('fIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const d=JSON.parse(await f.text());if(typeof d.text!=='string')throw 0;
+    if(allText()&&!confirm('هذا بيستبدل الكتابة اللي في الدفتر الحين بالنسخة. متأكد؟'))return;
+    pages=[d.text];reflowAll();cur=0;dirty();show();$('grid').classList.remove('on');toast('تم الاسترجاع ✓')}
+  catch(err){toast('الملف هذا مو نسخة من الدفتر')}};
+
+/* ---------- PDF ---------- */
+const FONT='"Aref Ruqaa", serif';
+function noiseTile(){const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d'),d=x.createImageData(160,160);
+  for(let i=0;i<d.data.length;i+=4){const v=Math.random()*60;d.data[i]=110;d.data[i+1]=80;d.data[i+2]=35;d.data[i+3]=v}x.putImageData(d,0,0);return c}
+function paper(x,nt){const g=x.createRadialGradient(PW*.45,PH*.5,20,PW*.45,PH*.5,PH*.62);g.addColorStop(0,'#f5e7c0');g.addColorStop(.6,'#ecd7a3');g.addColorStop(1,'#d6b97c');
+  x.fillStyle=g;x.fillRect(0,0,PW,PH);x.fillStyle=x.createPattern(nt,'repeat');x.globalAlpha=.5;x.fillRect(0,0,PW,PH);x.globalAlpha=1;
+  const s=x.createLinearGradient(PW,0,PW-26,0);s.addColorStop(0,'rgba(80,50,20,.28)');s.addColorStop(1,'rgba(80,50,20,0)');x.fillStyle=s;x.fillRect(0,0,PW,PH)}
+function wrap(x,t,max){const out=[];for(const para of t.split('\n')){if(!para){out.push('');continue}let line='';
+  for(const w of para.split(' ')){const tryL=line?line+' '+w:w;if(x.measureText(tryL).width<=max||!line)line=tryL;else{out.push(line);line=w}}out.push(line)}return out}
+function drawPage(i,nt){const S=2.4,c=document.createElement('canvas');c.width=PW*S;c.height=PH*S;const x=c.getContext('2d');x.scale(S,S);paper(x,nt);
+  x.fillStyle='rgba(120,86,40,.38)';for(let k=0;k<16;k++)x.fillRect(0,TOP+k*LH+24,PW,1);
+  x.fillStyle='rgba(170,60,50,.45)';x.fillRect(PW-41,0,1,PH);x.fillRect(PW-38,0,1,PH);
+  x.font='23px '+FONT;x.fillStyle='#15100b';let t=vis(pages[i]||'');if(t.endsWith('\n'))t=t.replace(/\n+$/,'');
+  const lines=wrap(x,t,PW-TXL-TXR-8);lines.forEach((l,k)=>{if(k>17)return;const rtl=!/^[^֐-ࣿ]*[A-Za-z]/.test(l);
+    x.direction=rtl?'rtl':'ltr';x.textAlign=rtl?'right':'left';x.fillText(l,rtl?PW-TXR-4:TXL+4,TOP+k*LH+22)});
+  x.direction='rtl';x.textAlign='center';x.font='17px '+FONT;x.fillStyle='#7a5a30';x.fillText('— '+AR(i+1)+' —',PW/2,PH-16);return c}
+function drawCover(){const S=2.4,c=document.createElement('canvas');c.width=PW*S;c.height=PH*S;const x=c.getContext('2d');x.scale(S,S);
+  const g=x.createRadialGradient(PW*.4,PH*.35,10,PW*.4,PH*.35,PH*.7);g.addColorStop(0,'#7a3622');g.addColorStop(.7,'#4a1d12');g.addColorStop(1,'#2e110a');x.fillStyle=g;x.fillRect(0,0,PW,PH);
+  x.strokeStyle='rgba(216,180,106,.75)';x.lineWidth=2;x.strokeRect(30,18,PW-48,PH-36);x.lineWidth=1;x.strokeRect(38,26,PW-64,PH-52);
+  x.direction='rtl';x.textAlign='center';x.fillStyle='#d8b46a';x.font='700 64px '+FONT;x.fillText('مذكراتي',PW/2,PH/2+18);return c}
+let jspdfP=null;
+$('bPdf').onclick=async()=>{
+  if(!window.jspdf){toast('افتح الدفتر مرة وأنت متصل عشان يجهز حفظ PDF');return}
+  const dl={save:async({filename,data})=>{
+    const u=URL.createObjectURL(data),a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}};
+  if(!dl){toast('حفظ الملفات غير متاح هنا');return}
+  toast('يجهّز الملف…');await document.fonts.load('23px "Aref Ruqaa"').catch(()=>{});await document.fonts.load('700 64px "Aref Ruqaa"').catch(()=>{});
+  const nt=noiseTile(),doc=new jspdf.jsPDF({unit:'pt',format:[PW,PH],orientation:'portrait'});
+  doc.addImage(drawCover().toDataURL('image/jpeg',.88),'JPEG',0,0,PW,PH);
+  const last=pages[pages.length-1]?pages.length:pages.length-1;
+  for(let i=0;i<Math.max(last,1);i++){doc.addPage([PW,PH],'portrait');doc.addImage(drawPage(i,nt).toDataURL('image/jpeg',.85),'JPEG',0,0,PW,PH)}
+  try{await dl.save({filename:'مذكراتي.pdf',data:doc.output('blob')});toast('تم الحفظ ✓')}
+  catch(e){toast(e&&e.code==='declined'?'تم الإلغاء':'ما قدرت أحفظ الملف')}
+};
+
+/* ---------- fit to screen (page keeps its size while typing) ---------- */
+let typing=false,baseH=0,scl=1;
+function fit(){const vv=window.visualViewport,vw=vv?vv.width:innerWidth,vh=vv?vv.height:innerHeight;
+  if(!typing||!baseH)baseH=Math.max(baseH&&typing?baseH:0,vh);
+  $('app').style.height=vh+'px';scl=Math.min((vw-20)/PW,(baseH-54-60-14)/PH,1.7);
+  stage.style.transform=`scale(${scl})`;frame.style.width=PW*scl+'px';frame.style.height=PH*scl+'px';
+  if(typing)follow();else frame.style.top='';scrollTo(0,0)}
+function follow(){if(!typing)return;const vv=window.visualViewport,vh=vv?vv.height:innerHeight,deskH=vh-54;
+  meas.value=ta.value.slice(0,ta.selectionStart);const rows=Math.max(1,Math.round(meas.scrollHeight/LH));
+  const caret=(TOP+rows*LH)*scl;let top=deskH*0.6-caret;top=Math.min(8,Math.max(deskH-PH*scl-8,top));frame.style.top=top+'px'}
+ta.addEventListener('focus',()=>{typing=true;document.body.classList.add('typing');setTimeout(fit,50);setTimeout(fit,400)});
+ta.addEventListener('blur',()=>{typing=false;document.body.classList.remove('typing');baseH=0;setTimeout(fit,50);setTimeout(fit,400)});
+document.addEventListener('selectionchange',()=>{if(typing&&document.activeElement===ta)follow()});
+ta.addEventListener('input',()=>requestAnimationFrame(follow));
+(window.visualViewport||window).addEventListener('resize',fit);addEventListener('orientationchange',()=>{baseH=0;setTimeout(fit,300)});fit();
+
+/* ---------- start ---------- */
+reflowAll();cur=Math.min(+(ls.get('diary-pos')||0)||0,pages.length-1);show();
+document.fonts.ready.then(()=>{const g=starts(pages)[cur]||0;reflowAll();const ns=starts(pages);let p=0;ns.forEach((v,k)=>{if(v<=g)p=k});cur=p;show()});
+setSt(updated?'محفوظ على الجوال ✓':'دفتر جديد');connect();
+if('serviceWorker' in navigator){const had=!!navigator.serviceWorker.controller;let rl=false;
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!rl){rl=true;clearTimeout(lt);ls.set('diary-v1',JSON.stringify({text:allText(),updated}));location.reload()}})}
+}
+</script>
+</body>
+</html>
